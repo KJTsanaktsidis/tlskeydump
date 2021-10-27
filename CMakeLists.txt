@@ -109,7 +109,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     # This function builds OpenSSL. It takes:
     #   -> A version, which needs to be a valid git tag in the OpenSSL repository
-    #   -> A "sym_type", which is one of the values that openssl_build_command.rb
+    #   -> A "sym_type", which is one of the values that openssl_postprocess_command.rb
     #      understands (so "dbg", "strip", "buildid", "dir", or "dwz").
     #        - A "dbg" build has debug symbols in the .so/.a files themselves.
     #        - A "strip" build has no debug symbols at all
@@ -117,7 +117,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     #        - A "debuglink" build has debug symbols specified at a filename in the
     #          .gnu_debuglink ELF section
     #        - A "dwz" build has main and aux debug info separated with the dwz tool
-    #      openssl_build_command.rb is responsible for setting up the debug syms as
+    #      openssl_postprocess_command.rb is responsible for setting up the debug syms as
     #      requested.
     # It returns the target name it created & the prefix it was installed to.
     function(Build_OpenSSL_For_Test OPENSSL_VERSION OPENSSL_SYM_TYPE OUT_TARGET OUT_PREFIX)
@@ -130,19 +130,21 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
             URL "https://github.com/openssl/openssl/archive/refs/tags/${OPENSSL_VERSION}.tar.gz"
             UPDATE_DISCONNECTED ON
             SOURCE_DIR ${OPENSSL_SRCDIR}
-            # Set CONFIGURE and INSTALL commands to "" since we just drive the whole thing
-            # with a Ruby script.
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND
+            CONFIGURE_COMMAND "${OPENSSL_SRCDIR}/config" "-d" "--prefix=${OPENSSL_PREFIX}"
+            # the default BUILD_COMMAND is "make" - by leaving the default, it generates the
+            # correct integration with the parent make jobserver too for parallel builds.
+            #
+            # For INSTALL_COMMAND - this will do the postprocessing needed to strip/move/split
+            # the debug symbols according to OPENSSL_SYM_TYPE. 
+            INSTALL_COMMAND
                 ${ENVPROG} "BUNDLE_PATH=${BUNDLE_PATH}" ${RUBY}
-                "${PROJECT_SOURCE_DIR}/test/openssl_build_command.rb"
+                "${PROJECT_SOURCE_DIR}/test/openssl_postprocess_command.rb"
                 "--prefix" ${OPENSSL_PREFIX}
                 "--srcdir" ${OPENSSL_SRCDIR}
                 "--symtype" ${OPENSSL_SYM_TYPE}
-            INSTALL_COMMAND ""
         )
         # The OpenSSL target needs to depend on the bundle_install target because the
-        # openssl_build_command.rb script needs gems.
+        # openssl_postprocess_command.rb script needs gems.
         add_dependencies(${OPENSSL_TARGET} bundle_install)
 
         set(${OUT_TARGET} ${OPENSSL_TARGET} PARENT_SCOPE)

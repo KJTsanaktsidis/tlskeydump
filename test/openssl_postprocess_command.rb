@@ -36,9 +36,9 @@ OptionParser.new do |opts|
     end
 end.parse!
 
-# Configure, make, make install into the build directory
-sh join(openssl_srcdir, 'config'), '-d', "--prefix=#{openssl_prefix}"
-sh 'make'
+# Install to the $PREFIX
+# Don't just run "make install", because that will spend 10,000 years
+# copying over man pages we don't need.
 sh 'make', 'install_sw', 'install_ssldirs'
 
 # Some toolchains will produce openssl in a lib64 instead of a lib directory.
