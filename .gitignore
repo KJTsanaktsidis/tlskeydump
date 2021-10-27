@@ -1,0 +1,5 @@
+.vscode/
+builddir/
+build/
+tlskeydump
+test/vendor

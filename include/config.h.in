@@ -1,0 +1,9 @@
+#ifndef __config_h
+#define __config_h
+
+#cmakedefine01 HAVE_PIDFD_OPEN
+#cmakedefine01 HAVE_PIDFD_SEND_SIGNAL
+#define HAVE_PIDFD (HAVE_PIDFD_OPEN && HAVE_PIDFD_SEND_SIGNAL)
+#cmakedefine01 HAVE_SIGABBREV_NP
+
+#endif

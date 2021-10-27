@@ -1,0 +1,55 @@
+tlskeydump(1) -- extract TLS session keys from running programs
+===============================================================
+
+## SYNOPSIS
+
+`tlskeydump` `-p`|`--pid` <pid> [options....]
+`tlskeydump` [options...] [--] /bin/program argv1 argv2 ...
+
+## DESCRIPTION
+
+**tlskeydump** spies on another process to find usages of several common TLS
+libraries, and then extracts the ephemeral session keys for TLS connections.
+Both client and server connections can be tracked. The keys are written out in
+the NSS key log format, and can be used with a program like Wireshark to
+decrypt TLS data captured during a packet capture session.
+
+## OPTIONS
+
+  * `-d`, `--enable-debuginfod`:
+    Enables support for fetching debug symbols from a debuginfod(8) server. If
+    set, `tlskeydump` will attempt to find debuginfo for binaries from the
+    sources specified in the `DEBUGINFOD_URLS` environment variable if symbols
+    cannot be found on the local system. Defaults to off.
+  * `--debug-dir`:
+    Colon-separated list of directories to look for debuginfo from. By default,
+    this is `/usr/lib/debug`. `tlskeydump` will search for debugging symbols in
+    this directory using the same algorithm as gdb(1).
+  * `-h`, `--help`:
+    Display help output
+  * `-o`, `--out`=<file>:
+    Write the keylog output to <file>. By default, keylog output is written to
+    standard output.
+  * `-p`, `--pid`=<pid>[,<pid>]:
+    Attach to the already-running process(es) with id <pid>, and dump its TLS
+    session keys. If this option is not provided, then `tlskeydump` will expect
+    the name of a program to invoke as an argument.
+  * `-v`, `--verbose:
+    Print verbose output. Verbose log output will be printed to standard error
+    so as not to intefere with the keylog file output.
+  * `-s`, `--graceful-shutdown-signal`:
+    Name or number of a signal to send to an owned child process (i.e. not one
+    from `--pid`) when shutting down. By default, SIGINT is sent.
+  * `--static-syms-libssl=<file>`:
+    By default, if a supported TLS library is statically linked with the
+    program to be traced without debug symbols, `tlskeydump` will not know the
+    struct offsets/sizes to use, and so will not be able to trace usage of this
+    library. If `--static-syms-libssl` is passed, `tlskeydump` will assume that
+    the struct information in the provided file is a match for the version
+    linked into the traced program. This should work as long as this copy of
+    libssl is of the same version/built with the same options as the embedded
+    copy.
+  * `-t`, `--graceful-shutdown-timeout`:
+    How long to wait after sending `--graceful-shutdown-signal` before sending
+    SIGKILL to a child. Accepts suffixes `ms`, `s`, `m`, and `h` to define the
+    unit; a bare number is treated as value in secionds. Defaults to 5 seconds.
