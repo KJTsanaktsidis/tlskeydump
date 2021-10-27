@@ -90,13 +90,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     find_program(ENVPROG env REQUIRED)
 
     # This sets up a target bundle_install that will run bundle install.
-    # The gems are installed to tests/bundle_vendor, and we also touch a file
-    # tests/bundle_vendor/bundled_at so that the target is not considered out-of-date
+    # The gems are installed to test/bundle_vendor, and we also touch a file
+    # test/bundle_vendor/bundled_at so that the target is not considered out-of-date
     # unless the Gemfile/Gemfile.lock changes.
     # This doesn't just stop pointless bundle install invocations, it also makes sure
     # that the OpenSSL targets (which depend on this) don't think they're out of date
     # either.
-    set(BUNDLE_PATH "${PROJECT_BINARY_DIR}/tests/bundle_vendor")
+    set(BUNDLE_PATH "${PROJECT_BINARY_DIR}/test/bundle_vendor")
     add_custom_command(
         OUTPUT "${BUNDLE_PATH}/bundled_at"
         COMMAND
@@ -121,9 +121,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     #      requested.
     # It returns the target name it created & the prefix it was installed to.
     function(Build_OpenSSL_For_Test OPENSSL_VERSION OPENSSL_SYM_TYPE OUT_TARGET OUT_PREFIX)
-        set(OPENSSL_PREFIX "${PROJECT_BINARY_DIR}/tests/openssl_vendor/${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
+        set(OPENSSL_PREFIX "${PROJECT_BINARY_DIR}/test/openssl_vendor/${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
         set(OPENSSL_TARGET "${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
-        set(OPENSSL_SRCDIR "${PROJECT_BINARY_DIR}/tests/openssl_vendor_src/${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
+        set(OPENSSL_SRCDIR "${PROJECT_BINARY_DIR}/test/openssl_vendor_src/${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
 
         ExternalProject_Add(
             ${OPENSSL_TARGET}
@@ -172,6 +172,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
             PRIVATE test/testprogs/openssl_111_client_testprog.cxx
             PRIVATE test/testprogs/test_shared/openssl_111.cxx
             PRIVATE test/testprogs/test_shared/openssl_111.h
+        )
+        set_property(
+            TARGET ${TESTPROG_TARGET}
+            PROPERTY RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/test"
         )
         target_include_directories(${TESTPROG_TARGET} PRIVATE test/testprogs)
         # Testprogs depend on boost
