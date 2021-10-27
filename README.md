@@ -93,7 +93,7 @@ ctest --verbose
 ```
 
 ## Documentation
-(I need to actually push this so I can push a link to tlskeydump1.ronn)
+There's a [man page](https://github.com/KJTsanaktsidis/tlskeydump/blob/main/tlskeydump.1.ronn) here.
 
 ## How it works
 
