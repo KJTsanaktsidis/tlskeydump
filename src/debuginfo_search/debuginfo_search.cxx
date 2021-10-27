@@ -261,7 +261,7 @@ std::optional<int> find_debuginfo_dwfl_cb(Dwfl_Module *mod, const char *modname,
       for (auto &debug_dir : opts.global_debug_directories) {
         candidate = {};
         candidate.path = std::filesystem::path(debug_dir) /
-                         module_filename_abs.value().parent_path() /
+                         module_filename_abs.value().parent_path().relative_path() /
                          debuglink_file_name_path.relative_path();
         set_validation(candidate);
         candidate_files_abs.push_back(candidate);

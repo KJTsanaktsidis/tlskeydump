@@ -9,7 +9,7 @@ require 'optparse'
 
 include FileUtils
 extend Forwardable
-def_delegators File, :directory?, :join, :basename, :dirname
+def_delegators File, :directory?, :join, :basename, :dirname, :absolute_path
 
 def build_id_for_file(so)
     stdout, status = Open3.capture2('readelf', '--notes', so)
@@ -66,6 +66,17 @@ elsif debug_sym_mode == :strip
     end
 elsif debug_sym_mode == :dbg
     # do nothing
+elsif debug_sym_mode == :debuglink
+    # Symbols in $DEBUG_DIR/$PREFIX/file.so
+    Dir[join(openssl_prefix, "lib/*.so")].each do |so|
+        debug_file_location = join(openssl_prefix, "debug", absolute_path(so) + ".debug")
+        mkdir_p dirname(debug_file_location)
+        cp so, debug_file_location
+
+        sh "strip", "--only-keep-debug", debug_file_location
+        sh "strip", "--strip-debug", so
+        sh "objcopy", "--add-gnu-debuglink", debug_file_location, so
+    end
 else
     raise "Unknown debug sym mode #{debug_sym_mode}"
 end

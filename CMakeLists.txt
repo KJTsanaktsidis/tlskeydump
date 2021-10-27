@@ -47,6 +47,7 @@ set(TLSKEYDUMP_SOURCES
 target_sources(tlskeydump PRIVATE ${TLSKEYDUMP_SOURCES})
 set_property(TARGET tlskeydump PROPERTY CXX_STANDARD 20)
 set_property(TARGET tlskeydump PROPERTY CXX_EXTENSIONS ON)
+target_compile_options(tlskeydump PRIVATE "-g")
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -77,13 +78,24 @@ configure_file(include/config.h.in config.h)
 target_include_directories(tlskeydump PRIVATE include/)
 target_include_directories(tlskeydump PRIVATE "${PROJECT_BINARY_DIR}")
 
+# This block is for the tests. The test build setup is pretty complicated because
+# it builds OpenSSL several times in various different configurations.
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+
+    # Programs needed by the test suite
     find_program(RUBY ruby REQUIRED)
     find_program(BUNDLE bundle REQUIRED)
     find_program(STRIP strip REQUIRED)
     find_program(READELF readelf REQUIRED)
     find_program(ENVPROG env REQUIRED)
 
+    # This sets up a target bundle_install that will run bundle install.
+    # The gems are installed to tests/bundle_vendor, and we also touch a file
+    # tests/bundle_vendor/bundled_at so that the target is not considered out-of-date
+    # unless the Gemfile/Gemfile.lock changes.
+    # This doesn't just stop pointless bundle install invocations, it also makes sure
+    # that the OpenSSL targets (which depend on this) don't think they're out of date
+    # either.
     set(BUNDLE_PATH "${PROJECT_BINARY_DIR}/tests/bundle_vendor")
     add_custom_command(
         OUTPUT "${BUNDLE_PATH}/bundled_at"
@@ -95,6 +107,19 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     )
     add_custom_target(bundle_install DEPENDS "${BUNDLE_PATH}/bundled_at")
 
+    # This function builds OpenSSL. It takes:
+    #   -> A version, which needs to be a valid git tag in the OpenSSL repository
+    #   -> A "sym_type", which is one of the values that openssl_build_command.rb
+    #      understands (so "dbg", "strip", "buildid", "dir", or "dwz").
+    #        - A "dbg" build has debug symbols in the .so/.a files themselves.
+    #        - A "strip" build has no debug symbols at all
+    #        - A "buildid" build has debug symbols at $PREFIX/debug/.build-id/xx/xxxxxx.debug
+    #        - A "debuglink" build has debug symbols specified at a filename in the
+    #          .gnu_debuglink ELF section
+    #        - A "dwz" build has main and aux debug info separated with the dwz tool
+    #      openssl_build_command.rb is responsible for setting up the debug syms as
+    #      requested.
+    # It returns the target name it created & the prefix it was installed to.
     function(Build_OpenSSL_For_Test OPENSSL_VERSION OPENSSL_SYM_TYPE OUT_TARGET OUT_PREFIX)
         set(OPENSSL_PREFIX "${PROJECT_BINARY_DIR}/tests/openssl_vendor/${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
         set(OPENSSL_TARGET "${OPENSSL_VERSION}_${OPENSSL_SYM_TYPE}")
@@ -105,6 +130,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
             URL "https://github.com/openssl/openssl/archive/refs/tags/${OPENSSL_VERSION}.tar.gz"
             UPDATE_DISCONNECTED ON
             SOURCE_DIR ${OPENSSL_SRCDIR}
+            # Set CONFIGURE and INSTALL commands to "" since we just drive the whole thing
+            # with a Ruby script.
             CONFIGURE_COMMAND ""
             BUILD_COMMAND
                 ${ENVPROG} "BUNDLE_PATH=${BUNDLE_PATH}" ${RUBY}
@@ -114,6 +141,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
                 "--symtype" ${OPENSSL_SYM_TYPE}
             INSTALL_COMMAND ""
         )
+        # The OpenSSL target needs to depend on the bundle_install target because the
+        # openssl_build_command.rb script needs gems.
         add_dependencies(${OPENSSL_TARGET} bundle_install)
 
         set(${OUT_TARGET} ${OPENSSL_TARGET} PARENT_SCOPE)
@@ -122,7 +151,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "dbg" OPENSSL_1_1_1_DBG_TARGET OPENSSL_1_1_1_DBG_PREFIX)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "buildid" OPENSSL_1_1_1_BUILDID_TARGET OPENSSL_1_1_1_BUILDID_PREFIX)
+    Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "debuglink" OPENSSL_1_1_1_DEBUGLINK_TARGET OPENSSL_1_1_1_DEBUGLINK_PREFIX)
 
+    # Each individual testprog actually specifies its own sources, but this array is so
+    # that we have a list of all of them for use in the format target.
     set(
         TESTPROG_SOURCES
         "test/testprogs/openssl_111_client_testprog.cxx"
@@ -130,6 +162,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
         "test/testprogs/test_shared/openssl_111.h"
     )
 
+    # This function will build the testprogs/openssl_111_client_testprog.cxx test
+    # program, linked againsg the OpenSSL specified by OPENSSL_TARGET/OPENSSL_PREFIX
     function(Build_Dyn_Client_Testprog OPENSSL_TARGET OPENSSL_PREFIX OUT_TARGET)
         set(TESTPROG_TARGET "${OPENSSL_TARGET}_testprog_dyn")
         add_executable(${TESTPROG_TARGET})
@@ -140,9 +174,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
             PRIVATE test/testprogs/test_shared/openssl_111.h
         )
         target_include_directories(${TESTPROG_TARGET} PRIVATE test/testprogs)
+        # Testprogs depend on boost
         target_include_directories(${TESTPROG_TARGET} PRIVATE ${Boost_INCLUDE_DIR})
         target_link_libraries(${TESTPROG_TARGET} PRIVATE ${Boost_LIBRARIES})
 
+        # Link against the specified OpenSSL we compiled
         add_dependencies(${TESTPROG_TARGET} ${OPENSSL_TARGET})
         target_include_directories(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/include")
         target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libssl.so")
@@ -153,13 +189,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DBG_TARGET} ${OPENSSL_1_1_1_DBG_PREFIX} openssl_1_1_1_dyn_dbg_client_exe)
     Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_BUILDID_TARGET} ${OPENSSL_1_1_1_BUILDID_PREFIX} openssl_1_1_1_dyn_buildid_client_exe)
+    Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DEBUGLINK_TARGET} ${OPENSSL_1_1_1_DEBUGLINK_PREFIX} openssl_1_1_1_dyn_debuglink_client_exe)
 
+    # This huge set of environment variables gets passed as /usr/bin/env ${TEST_PROGRAMS} ruby test.rb
+    # so that the tests can find out how to execute the test programs.
+    # Since they use $<TARGET_FILE:>, it also has the effect of making the tests depend on the
+    # test programs.
     set(TEST_PROGRAMS
         "TLSKEYDUMP_TESTS__TLSKEYDUMP_EXE=$<TARGET_FILE:tlskeydump>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DBG_PREFIX=${OPENSSL_1_1_1_DBG_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_BUILDID_PREFIX=${OPENSSL_1_1_1_BUILDID_PREFIX}"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DEBUGLINK_PREFIX=${OPENSSL_1_1_1_DEBUGLINK_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DBG_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_dbg_client_exe}>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_BUILDID_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_buildid_client_exe}>"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DEBUGLINK_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_debuglink_client_exe}>"
     )
 
     add_test(

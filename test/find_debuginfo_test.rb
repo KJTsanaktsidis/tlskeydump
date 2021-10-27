@@ -25,4 +25,14 @@ describe 'finding debuginfo' do
         assert_equal testprog_lines, tlskeylog_lines
         assert_equal testprog_lines.size, 5
     end
+
+    it 'works with symbols in a debug directory' do
+        testprog_lines, tlskeylog_lines = run_tlskeylog_test_program(
+            testprog: OPENSSL_1_1_1_TESTPROG_DYN_DEBUGLINK_CLIENT_EXE,
+            tlskeylog_args: ["--debug-dir", File.join(OPENSSL_1_1_1_DEBUGLINK_PREFIX, "debug")],
+        )
+
+        assert_equal testprog_lines, tlskeylog_lines
+        assert_equal testprog_lines.size, 5
+    end
 end
