@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __ptrace_arch_h
 #define __ptrace_arch_h
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 require_relative 'spec_helper'
 
 # This spec file runs all the various builds of the client program, with OpenSSL debug

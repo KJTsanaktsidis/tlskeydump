@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __lru_set_h
 #define __lru_set_h
 

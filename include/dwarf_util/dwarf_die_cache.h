@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __dwarf_die_cache_h
 #define __dwarf_die_cache_h
 

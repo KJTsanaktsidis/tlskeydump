@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __comma_separated_opts_h
 #define __comma_separated_opts_h
 

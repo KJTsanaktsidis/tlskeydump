@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 find_path(Libelf_INCLUDE_DIR "elf.h" "gelf.h" "libelf.h")
 find_library(Libelf_LIBRARIES elf)
 include(FindPackageHandleStandardArgs)

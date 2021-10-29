@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __ptrace_mem_h
 #define __ptrace_mem_h
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __tls_key_collector_h
 #define __tls_key_collector_h
 

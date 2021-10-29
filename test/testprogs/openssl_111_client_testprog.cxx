@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include <boost/assert.hpp>
 #include <cstdlib>
 #include <fstream>
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "test_shared/openssl_111.h"
 #include "test_shared/util.h"

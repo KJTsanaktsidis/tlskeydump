@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "config.h"
 
 #include <boost/algorithm/string/join.hpp>

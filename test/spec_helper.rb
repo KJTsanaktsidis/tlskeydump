@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 ENV['BUNDLE_GEMFILE'] = "#{__dir__}/Gemfile"
 require 'bundler/setup'
 require 'minitest/autorun'

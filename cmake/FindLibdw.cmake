@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 find_path(Libdw_INCLUDE_DIR "elfutils/libdw.h" "elfutils/libdwfl.h")
 find_library(Libdw_LIBRARIES dw)
 include(FindPackageHandleStandardArgs)

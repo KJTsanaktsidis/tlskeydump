@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef __openssl_probe_h
 #define __openssl_probe_h
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include <boost/format.hpp>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
@@ -5,15 +7,13 @@
 
 #include "test_shared/openssl_111.h"
 
-static std::unordered_map<const SSL *, OpenSSL111Tester*> __global_tester_retriever;
+static std::unordered_map<const SSL *, OpenSSL111Tester *> __global_tester_retriever;
 
 void _keylog_callback_thunk(const SSL *ssl, const char *line) {
   __global_tester_retriever[ssl]->keylog_callback(ssl, line);
 }
 
-OpenSSL111Tester::OpenSSL111Tester() {
-
-}
+OpenSSL111Tester::OpenSSL111Tester() {}
 
 OpenSSL111Tester::~OpenSSL111Tester() {
   for (auto it = __global_tester_retriever.begin(); it != __global_tester_retriever.end();) {
@@ -25,10 +25,7 @@ OpenSSL111Tester::~OpenSSL111Tester() {
   }
 }
 
-void OpenSSL111Tester::set_tls_version(int v) {
-  _tls_version = v;
-}
-
+void OpenSSL111Tester::set_tls_version(int v) { _tls_version = v; }
 
 const std::vector<std::string> OpenSSL111Tester::captured_keylog_lines() {
   return _captured_keylog_lines;
@@ -63,7 +60,8 @@ void OpenSSL111Tester::connect_to(const std::string &server_addr) {
   BIO_set_conn_hostname(_bio.get(), server_addr.c_str());
   int res = BIO_do_connect(_bio.get());
   if (res <= 0) {
-    throw std::runtime_error((boost::format("BIO_do_connect to %s failed: %d") % server_addr % res).str());
+    throw std::runtime_error(
+        (boost::format("BIO_do_connect to %s failed: %d") % server_addr % res).str());
   }
 }
 

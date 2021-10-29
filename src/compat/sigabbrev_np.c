@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 /* Abbreviated name of signals.
    Copyright (C) 2020-2021 Free Software Foundation, Inc.
 
