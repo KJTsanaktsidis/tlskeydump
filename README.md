@@ -101,3 +101,6 @@ Tlskeydump works by attaching to the target process using [ptrace(2)](https://ma
 
 When the trap is hit, tlskeydump gets the pointer to the SSL context structure from the function arguments (e.g. for OpenSSL, this will be the `SSL` pointer). This pointer, along with the associated debug symbols from the structure, is then used to find the TLS key material for the session (e.g. CLIENT_RANDOM, CLIENT_HANDSHAKE_TRAFFIC_SECRET, etc.) inside the structure. This data is then emitted to the NSS keylog file.
 
+## License
+
+This project is licensed under the terms of the GNU General Public License v2, or, at your option, any later version.
