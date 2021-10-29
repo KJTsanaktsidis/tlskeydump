@@ -90,6 +90,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     find_program(STRIP strip REQUIRED)
     find_program(READELF readelf REQUIRED)
     find_program(ENVPROG env REQUIRED)
+    find_program(DWZ dwz REQUIRED)
 
     # This sets up a target bundle_install that will run bundle install.
     # The gems are installed to test/bundle_vendor, and we also touch a file
@@ -156,6 +157,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "dbg" OPENSSL_1_1_1_DBG_TARGET OPENSSL_1_1_1_DBG_PREFIX)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "buildid" OPENSSL_1_1_1_BUILDID_TARGET OPENSSL_1_1_1_BUILDID_PREFIX)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "debuglink" OPENSSL_1_1_1_DEBUGLINK_TARGET OPENSSL_1_1_1_DEBUGLINK_PREFIX)
+    Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "dwz" OPENSSL_1_1_1_DWZ_TARGET OPENSSL_1_1_1_DWZ_PREFIX)
 
     # Each individual testprog actually specifies its own sources, but this array is so
     # that we have a list of all of them for use in the format target.
@@ -198,6 +200,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DBG_TARGET} ${OPENSSL_1_1_1_DBG_PREFIX} openssl_1_1_1_dyn_dbg_client_exe)
     Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_BUILDID_TARGET} ${OPENSSL_1_1_1_BUILDID_PREFIX} openssl_1_1_1_dyn_buildid_client_exe)
     Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DEBUGLINK_TARGET} ${OPENSSL_1_1_1_DEBUGLINK_PREFIX} openssl_1_1_1_dyn_debuglink_client_exe)
+    Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DWZ_TARGET} ${OPENSSL_1_1_1_DWZ_PREFIX} openssl_1_1_1_dyn_dwz_client_exe)
 
     # This huge set of environment variables gets passed as /usr/bin/env ${TEST_PROGRAMS} ruby test.rb
     # so that the tests can find out how to execute the test programs.
@@ -208,9 +211,11 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DBG_PREFIX=${OPENSSL_1_1_1_DBG_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_BUILDID_PREFIX=${OPENSSL_1_1_1_BUILDID_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DEBUGLINK_PREFIX=${OPENSSL_1_1_1_DEBUGLINK_PREFIX}"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DWZ_PREFIX=${OPENSSL_1_1_1_DWZ_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DBG_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_dbg_client_exe}>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_BUILDID_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_buildid_client_exe}>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DEBUGLINK_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_debuglink_client_exe}>"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DWZ_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_dwz_client_exe}>"
     )
 
     add_test(

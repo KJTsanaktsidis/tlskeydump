@@ -79,6 +79,27 @@ elsif debug_sym_mode == :debuglink
         sh "strip", "--strip-debug", so
         sh "objcopy", "--add-gnu-debuglink", debug_file_location, so
     end
+elsif debug_sym_mode == :dwz
+    # Compressed debuginfo made with dwz(1)
+    # We will "compress" debuginfo by sharing commonality with libssl and.... itself.
+
+    # Start by making the .debuglink files though
+    Dir[join(openssl_prefix, "lib/*.so")].each do |so|
+        build_id = build_id_for_file so
+        debug_file_location = join(openssl_prefix, "debug/.build-id", build_id[0...2], build_id[2..-1] + ".debug")
+        mkdir_p dirname(debug_file_location)
+        cp so, debug_file_location
+
+        sh "strip", "--only-keep-debug", debug_file_location
+        sh "strip", "--strip-debug", so
+        sh "objcopy", "--add-gnu-debuglink", debug_file_location, so
+
+        alt_file_location = debug_file_location + ".dwz_alt"
+        cp debug_file_location, debug_file_location + ".second_copy"
+        sh "dwz", "--multifile", alt_file_location, "--multifile-name", absolute_path(alt_file_location),
+            debug_file_location, debug_file_location + ".second_copy"
+        rm debug_file_location + ".second_copy"
+    end
 else
     raise "Unknown debug sym mode #{debug_sym_mode}"
 end
