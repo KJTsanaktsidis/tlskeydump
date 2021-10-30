@@ -63,11 +63,14 @@ if debug_sym_mode == :buildid
         sh "strip", "--only-keep-debug", debug_file_location
     end
 elsif debug_sym_mode == :strip
-    Dir[join(openssl_prefix, "lib/*.so")].each do |so|
+    libs = Dir[join(openssl_prefix, "lib/*.so")] + Dir[join(openssl_prefix, "lib/*.a")]
+    libs.each do |so|
         sh "strip", "--strip-debug", so
     end
+    mkdir_p join(openssl_prefix, "empty_debug_dir")
 elsif debug_sym_mode == :dbg
     # do nothing
+    mkdir_p join(openssl_prefix, "empty_debug_dir")
 elsif debug_sym_mode == :debuglink
     # Symbols in $DEBUG_DIR/$PREFIX/file.so
     Dir[join(openssl_prefix, "lib/*.so")].each do |so|

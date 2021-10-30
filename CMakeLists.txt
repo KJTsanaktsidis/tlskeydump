@@ -158,6 +158,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "buildid" OPENSSL_1_1_1_BUILDID_TARGET OPENSSL_1_1_1_BUILDID_PREFIX)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "debuglink" OPENSSL_1_1_1_DEBUGLINK_TARGET OPENSSL_1_1_1_DEBUGLINK_PREFIX)
     Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "dwz" OPENSSL_1_1_1_DWZ_TARGET OPENSSL_1_1_1_DWZ_PREFIX)
+    Build_OpenSSL_For_Test("OpenSSL_1_1_1l" "strip" OPENSSL_1_1_1_STRIP_TARGET OPENSSL_1_1_1_STRIP_PREFIX)
+
 
     # Each individual testprog actually specifies its own sources, but this array is so
     # that we have a list of all of them for use in the format target.
@@ -170,8 +172,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     # This function will build the testprogs/openssl_111_client_testprog.cxx test
     # program, linked againsg the OpenSSL specified by OPENSSL_TARGET/OPENSSL_PREFIX
-    function(Build_Dyn_Client_Testprog OPENSSL_TARGET OPENSSL_PREFIX OUT_TARGET)
-        set(TESTPROG_TARGET "${OPENSSL_TARGET}_testprog_dyn")
+    function(Build_Client_Testprog LINK_METHOD OPENSSL_TARGET OPENSSL_PREFIX OUT_TARGET)
+        set(TESTPROG_TARGET "${OPENSSL_TARGET}_testprog_${LINK_METHOD}")
         add_executable(${TESTPROG_TARGET})
         target_sources(
             ${TESTPROG_TARGET}
@@ -191,16 +193,25 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
         # Link against the specified OpenSSL we compiled
         add_dependencies(${TESTPROG_TARGET} ${OPENSSL_TARGET})
         target_include_directories(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/include")
-        target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libssl.so")
-        target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libcrypto.so")
+
+        if(LINK_METHOD STREQUAL "dyn")
+            target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libssl.so")
+            target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libcrypto.so")
+        elseif(LINK_METHOD STREQUAL "static")
+            target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libssl.a")
+            target_link_libraries(${TESTPROG_TARGET} PRIVATE "${OPENSSL_PREFIX}/lib/libcrypto.a")
+            target_link_libraries(${TESTPROG_TARGET} PRIVATE "dl")
+        endif()
 
         set(${OUT_TARGET} ${TESTPROG_TARGET} PARENT_SCOPE)
     endfunction()
+    Build_Client_Testprog("dyn" ${OPENSSL_1_1_1_DBG_TARGET} ${OPENSSL_1_1_1_DBG_PREFIX} openssl_1_1_1_dyn_dbg_client_exe)
+    Build_Client_Testprog("static" ${OPENSSL_1_1_1_DBG_TARGET} ${OPENSSL_1_1_1_DBG_PREFIX} openssl_1_1_1_static_dbg_client_exe)
+    Build_Client_Testprog("dyn" ${OPENSSL_1_1_1_BUILDID_TARGET} ${OPENSSL_1_1_1_BUILDID_PREFIX} openssl_1_1_1_dyn_buildid_client_exe)
+    Build_Client_Testprog("dyn" ${OPENSSL_1_1_1_DEBUGLINK_TARGET} ${OPENSSL_1_1_1_DEBUGLINK_PREFIX} openssl_1_1_1_dyn_debuglink_client_exe)
+    Build_Client_Testprog("dyn" ${OPENSSL_1_1_1_DWZ_TARGET} ${OPENSSL_1_1_1_DWZ_PREFIX} openssl_1_1_1_dyn_dwz_client_exe)
+    Build_Client_Testprog("static" ${OPENSSL_1_1_1_STRIP_TARGET} ${OPENSSL_1_1_1_STRIP_PREFIX} openssl_1_1_1_static_strip_client_exe)
 
-    Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DBG_TARGET} ${OPENSSL_1_1_1_DBG_PREFIX} openssl_1_1_1_dyn_dbg_client_exe)
-    Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_BUILDID_TARGET} ${OPENSSL_1_1_1_BUILDID_PREFIX} openssl_1_1_1_dyn_buildid_client_exe)
-    Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DEBUGLINK_TARGET} ${OPENSSL_1_1_1_DEBUGLINK_PREFIX} openssl_1_1_1_dyn_debuglink_client_exe)
-    Build_Dyn_Client_Testprog(${OPENSSL_1_1_1_DWZ_TARGET} ${OPENSSL_1_1_1_DWZ_PREFIX} openssl_1_1_1_dyn_dwz_client_exe)
 
     # This huge set of environment variables gets passed as /usr/bin/env ${TEST_PROGRAMS} ruby test.rb
     # so that the tests can find out how to execute the test programs.
@@ -212,10 +223,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_BUILDID_PREFIX=${OPENSSL_1_1_1_BUILDID_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DEBUGLINK_PREFIX=${OPENSSL_1_1_1_DEBUGLINK_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_DWZ_PREFIX=${OPENSSL_1_1_1_DWZ_PREFIX}"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_STRIP_PREFIX=${OPENSSL_1_1_1_STRIP_PREFIX}"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DBG_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_dbg_client_exe}>"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_STATIC_DBG_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_static_dbg_client_exe}>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_BUILDID_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_buildid_client_exe}>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DEBUGLINK_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_debuglink_client_exe}>"
         "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_DYN_DWZ_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_dyn_dwz_client_exe}>"
+        "TLSKEYDUMP_TESTS__OPENSSL_1_1_1_TESTPROG_STATIC_STRIP_CLIENT_EXE=$<TARGET_FILE:${openssl_1_1_1_static_strip_client_exe}>"
     )
 
     add_test(

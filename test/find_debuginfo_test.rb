@@ -11,7 +11,7 @@ describe 'finding debuginfo' do
     it 'works with debug symbols compiled into the binary' do
         testprog_lines, tlskeylog_lines = run_tlskeylog_test_program(
             testprog: OPENSSL_1_1_1_TESTPROG_DYN_DBG_CLIENT_EXE,
-            tlskeylog_args: ["--debug-dir", File.join(OPENSSL_1_1_1_DBG_PREFIX, "debug")],
+            tlskeylog_args: ["--debug-dir", File.join(OPENSSL_1_1_1_DBG_PREFIX, "empty_debug_dir")],
         )
 
         assert_equal testprog_lines, tlskeylog_lines
@@ -42,6 +42,25 @@ describe 'finding debuginfo' do
         testprog_lines, tlskeylog_lines = run_tlskeylog_test_program(
             testprog: OPENSSL_1_1_1_TESTPROG_DYN_DWZ_CLIENT_EXE,
             tlskeylog_args: ["--debug-dir", File.join(OPENSSL_1_1_1_DWZ_PREFIX, "debug")],
+        )
+
+        assert_equal testprog_lines, tlskeylog_lines
+        assert_equal testprog_lines.size, 5
+    end
+
+    it 'works with statically-linked program with embedded debuginfo' do
+        testprog_lines, tlskeylog_lines = run_tlskeylog_test_program(
+            testprog: OPENSSL_1_1_1_TESTPROG_STATIC_DBG_CLIENT_EXE,
+            tlskeylog_args: ["--debug-dir", File.join(OPENSSL_1_1_1_DBG_PREFIX, "empty_debug_dir")],
+        )
+
+        assert_equal testprog_lines, tlskeylog_lines
+    end
+
+    it 'works with statically-linked program with symbols manually specified with --static-syms-libssl' do
+        testprog_lines, tlskeylog_lines = run_tlskeylog_test_program(
+            testprog: OPENSSL_1_1_1_TESTPROG_STATIC_STRIP_CLIENT_EXE,
+            tlskeylog_args: ["--debug-dir", File.join(OPENSSL_1_1_1_STRIP_PREFIX, "empty_debug_dir")],
         )
 
         assert_equal testprog_lines, tlskeylog_lines

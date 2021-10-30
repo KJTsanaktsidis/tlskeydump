@@ -111,6 +111,10 @@ std::optional<DieEntry> DieCache::lookup_die_by_name(const std::string &name,
 
 const std::vector<std::shared_ptr<ModuleEntry>> DieCache::modules() { return _modules; }
 
+bool DieCache::has_module_with_soname(const std::string &soname) {
+  return get_module_by_soname(soname).has_value();
+}
+
 void DieCache::force_load_all_modules() {
   for (auto &mod : _modules) {
     load_module_dwarf(mod);
@@ -118,11 +122,9 @@ void DieCache::force_load_all_modules() {
 }
 
 void DieCache::force_load_module_soname(const std::string &soname) {
-  auto module_entry = std::find_if(
-      _modules.begin(), _modules.end(),
-      [soname](const std::shared_ptr<ModuleEntry> &ent) -> bool { return ent->soname == soname; });
-  if (module_entry != _modules.end()) {
-    load_module_dwarf(*module_entry);
+  auto module_entry = get_module_by_soname(soname);
+  if (module_entry.has_value()) {
+    load_module_dwarf(module_entry.value());
   }
 }
 
@@ -153,6 +155,18 @@ void DieCache::load_module_dwarf(std::shared_ptr<ModuleEntry> module_entry) {
       }
       _dies_by_name[die_entry.name.value()].push_back(die_entry);
     }
+  }
+}
+
+std::optional<std::shared_ptr<ModuleEntry>>
+DieCache::get_module_by_soname(const std::string &soname) {
+  auto module_entry = std::find_if(
+      _modules.begin(), _modules.end(),
+      [soname](const std::shared_ptr<ModuleEntry> &ent) -> bool { return ent->soname == soname; });
+  if (module_entry == _modules.end()) {
+    return std::nullopt;
+  } else {
+    return *module_entry;
   }
 }
 

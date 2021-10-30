@@ -48,6 +48,7 @@ public:
   std::optional<DieEntry> get_type(const std::string &fnname);
   std::optional<DieEntry> get_type(const std::string &fnname, const std::string &soname);
   const std::vector<std::shared_ptr<ModuleEntry>> modules();
+  bool has_module_with_soname(const std::string &soname);
 
 private:
   Logger _logger;
@@ -61,6 +62,7 @@ private:
   void force_load_all_modules();
   void force_load_module_soname(const std::string &soname);
   void load_module_dwarf(std::shared_ptr<ModuleEntry> module_entry);
+  std::optional<std::shared_ptr<ModuleEntry>> get_module_by_soname(const std::string &soname);
 };
 
 } // namespace DwarfUtil

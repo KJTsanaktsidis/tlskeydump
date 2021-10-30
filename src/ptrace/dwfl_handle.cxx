@@ -106,12 +106,22 @@ bool DwflHandle::is_dynamic() {
 
 std::optional<DwarfUtil::DieEntry> DwflHandle::get_function(const std::string &fnname,
                                                             const std::string &soname) {
-  return _cache.get_function(fnname, soname);
+  // Does the cache have a module called soname?
+  if (_cache.has_module_with_soname(soname)) {
+    return _cache.get_function(fnname, soname);
+  } else {
+    // maybe it's statically linked - search _all_ modules.
+    return _cache.get_function(fnname);
+  }
 }
 
-std::optional<DwarfUtil::DieEntry> DwflHandle::get_type(const std::string &fnname,
+std::optional<DwarfUtil::DieEntry> DwflHandle::get_type(const std::string &type_name,
                                                         const std::string &soname) {
-  return _cache.get_type(fnname, soname);
+  if (_cache.has_module_with_soname(soname)) {
+    return _cache.get_type(type_name, soname);
+  } else {
+    return _cache.get_type(type_name);
+  }
 }
 
 int DwflHandle::find_debuginfo_thunk(Dwfl_Module *mod, void **userdata, const char *modname,
